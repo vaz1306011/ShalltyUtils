@@ -407,16 +407,30 @@ namespace ShalltyUtils
         }
         */
 
-        [HarmonyPrefix, HarmonyPatch(typeof(Timeline.Timeline), nameof(Timeline.Timeline.MoveKeyframe))]
-        static void MoveKeyframePrefix(Keyframe keyframe, float destinationTime, out float __state)
+        // Newer Timeline versions renamed MoveKeyframe to TryMoveKeyframe (private, returns bool).
+        [HarmonyPatch]
+        internal static class MoveKeyframeHooks
         {
-            __state = keyframe.parent.keyframes.Keys[keyframe.parent.keyframes.IndexOfValue(keyframe)];
-        }
-        [HarmonyPostfix, HarmonyPatch(typeof(Timeline.Timeline), nameof(Timeline.Timeline.MoveKeyframe))]
-        static void MoveKeyframePostfix(Keyframe keyframe, float destinationTime, float __state)
-        {
-            if (undoRedoTimeline.Value)
-                Singleton<UndoRedoManager>.Instance.Do(new UndoRedoCommands.MoveKeyframeCommand(keyframe, destinationTime, __state));
+            static System.Reflection.MethodBase TargetMethod()
+            {
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+                return typeof(Timeline.Timeline).GetMethod("TryMoveKeyframe", flags)
+                    ?? typeof(Timeline.Timeline).GetMethod("MoveKeyframe", flags);
+            }
+
+            static void Prefix(Keyframe keyframe, float destinationTime, out float __state)
+            {
+                __state = keyframe.parent.keyframes.Keys[keyframe.parent.keyframes.IndexOfValue(keyframe)];
+            }
+
+            static void Postfix(Keyframe keyframe, float destinationTime, float __state)
+            {
+                int index = keyframe.parent.keyframes.IndexOfValue(keyframe);
+                if (index == -1 || keyframe.parent.keyframes.Keys[index] == __state)
+                    return;
+                if (undoRedoTimeline.Value)
+                    Singleton<UndoRedoManager>.Instance.Do(new UndoRedoCommands.MoveKeyframeCommand(keyframe, destinationTime, __state));
+            }
         }
         [HarmonyPrefix, HarmonyPatch(typeof(Timeline.Timeline), nameof(Timeline.Timeline.AddKeyframe))]
         static void AddKeyframePrefix(Timeline.Interpolable interpolable, float time, out int __state)

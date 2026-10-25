@@ -147,6 +147,7 @@ namespace ShalltyUtils
 
             Harmony harmony = Harmony.CreateAndPatchAll(typeof(Hooks));
             harmony.PatchAll(typeof(PerformanceMode.Hooks));
+            harmony.PatchAll(typeof(Hooks.MoveKeyframeHooks));
 
             StudioSaveLoadApi.RegisterExtraBehaviour<ShalltyUtilsSceneData>(GUID);
             SceneManager.sceneLoaded += LoadedEvent;

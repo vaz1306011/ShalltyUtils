@@ -2577,6 +2577,9 @@ namespace ShalltyUtils
                     treeNode.treeState = treeNode.treeState == TreeNodeObject.TreeState.Open ? TreeNodeObject.TreeState.Close : TreeNodeObject.TreeState.Open;
                     treeNode.textName = treeNode.treeState != TreeNodeObject.TreeState.Open ? "Expand All" : "Collapse All";
 
+                    // KKUS's workspace search hooks set_treeState and deactivates nodes that don't match the search text. This button isn't part of the tree, so the search never reactivates it.
+                    treeNode.gameObject.SetActive(true);
+
                     foreach (TreeNodeObject treeNodeObject in Singleton<TreeNodeCtrl>.Instance.m_TreeNodeObject)
                     {
                         SetTreeStateRecursive(treeNodeObject, treeNode.treeState);
@@ -2584,6 +2587,7 @@ namespace ShalltyUtils
                 });
                 treeNode.m_ButtonState.onClick.AddListener(() =>
                 {
+                    treeNode.gameObject.SetActive(true);
                     treeNode.textName = treeNode.treeState != TreeNodeObject.TreeState.Open ? "Expand All" : "Collapse All";
 
                     foreach (TreeNodeObject treeNodeObject in Singleton<TreeNodeCtrl>.Instance.m_TreeNodeObject)
